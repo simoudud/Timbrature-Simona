@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestione Timbrature</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #eeede9;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9b9b96;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --green: #1D9E75;
+    --red: #D85A30;
+    --amber: #BA7517;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252523;
+      --bg3: #2e2e2b;
+      --text: #f0efe9;
+      --text2: #9b9b96;
+      --text3: #6b6b67;
+      --border: rgba(255,255,255,0.12);
+      --border2: rgba(255,255,255,0.22);
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg3);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 1.5rem 1rem;
+  }
+
+  .app {
+    max-width: 560px;
+    margin: 0 auto;
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    padding: 1.5rem;
+  }
+
+  h1 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+  }
+
+  h1 i { font-size: 20px; color: var(--green); }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text2);
+    font-weight: 400;
+    margin-bottom: -1px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--text);
+    font-weight: 500;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .date-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+    background: var(--bg2);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+  }
+
+  .date-nav button {
+    background: none;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-md);
+    width: 30px;
+    height: 30px;
+    font-size: 15px;
+    cursor: pointer;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .date-nav button:hover { background: var(--bg3); }
+
+  .date-nav input[type="date"] {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .today-btn {
+    font-size: 12px !important;
+    padding: 4px 10px !important;
+    width: auto !important;
+    white-space: nowrap;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .card {
+    background: var(--bg2);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+
+  .card-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .card-value { font-size: 22px; font-weight: 500; color: var(--text); }
+  .card-value.green { color: var(--green); }
+  .card-value.red { color: var(--red); }
+  .card-value.amber { color: var(--amber); }
+
+  /* STRUTTURA TIMBRATURE DINAMICHE */
+  .timbrature-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+  .time-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+  .time-row label { font-size: 13px; color: var(--text2); display: block; margin-bottom: 4px; }
+  .btn-remove-row {
+    background: none;
+    border: none;
+    color: var(--red);
+    cursor: pointer;
+    padding: 8px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-remove-row:hover { opacity: 0.7; }
+
+  input[type="time"],
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  textarea,
+  select {
+    width: 100%;
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    font-size: 14px;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, textarea:focus { border-color: var(--border2); }
+
+  textarea { resize: vertical; min-height: 64px; }
+
+  .divider { height: 0.5px; background: var(--border); margin: 1rem 0; }
+
+  .badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+
+  .badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 0.5px solid var(--border2);
+    color: var(--text2);
+    background: var(--bg);
+    transition: all 0.15s;
+  }
+
+  .badge.sel {
+    background: var(--bg2);
+    color: var(--text);
+    border-color: var(--border2);
+    font-weight: 500;
+  }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 1rem; flex-wrap: wrap; }
+
+  .btn-save {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 9px 20px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-save:hover { opacity: 0.85; }
+
+  .btn-outline {
+    background: none;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-md);
+    padding: 9px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-outline:hover { background: var(--bg2); }
+
+  .btn-danger { color: var(--red); border-color: var(--red); }
+
+  .alert {
+    background: var(--bg2);
+    border-left: 3px solid var(--green);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .past-badge {
+    font-size: 11px;
+    color: var(--amber);
+    background: #FAEEDA;
+    border-radius: 10px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* SETTIMANA */
+  .target-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .target-row label { margin: 0; white-space: nowrap; }
+  .target-row input[type="number"] { width: 70px; }
+
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.25rem;
+  }
+
+  .week-nav button {
+    background: none;
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius-md);
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .week-nav button:hover { background: var(--bg2); }
+  .week-label { font-size: 14px; font-weight: 500; flex: 1; }
+
+  .day-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 6px;
+    border-bottom: 0.5px solid var(--border);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+  }
+
+  .day-row:hover { background: var(--bg2); }
+  .day-row.today .day-name,
+  .day-row.today .day-date { color: var(--green); }
+
+  .day-name { font-size: 13px; font-weight: 500; width: 40px; flex-shrink: 0; }
+  .day-date { font-size: 12px; color: var(--text2); width: 50px; flex-shrink: 0; }
+  .day-hours { font-size: 14px; font-weight: 500; width: 55px; flex-shrink: 0; }
+  .day-note { font-size: 12px; color: var(--text2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .day-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg2); color: var(--text2); flex-shrink: 0; }
+
+  .week-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0 0;
+    margin-top: 4px;
+  }
+
+  .week-total-label { font-size: 13px; color: var(--text2); }
+  .week-total-val { font-size: 18px; font-weight: 500; }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: var(--bg2);
+    border-radius: 3px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+
+  .progress-fill { height: 100%; border-radius: 3px; background: var(--green); transition: width 0.3s; }
+  .progress-fill.over { background: var(--red); }
+
+  .prog-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  /* STORICO */
+  .history-item {
+    padding: 10px 6px;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+  }
+
+  .history-item:hover { background: var(--bg2); }
+  .history-date { font-weight: 500; }
+  .history-detail { color: var(--text2); margin-top: 2px; }
+
+  .empty { color: var(--text2); font-size: 13px; padding: 1rem 0; }
+
+  @media (max-width: 480px) {
+    body { padding: 0; }
+    .app { border-radius: 0; border: none; min-height: 100vh; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1><i class="ti ti-clock-record"></i> Timbrature</h1>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('oggi')"><i class="ti ti-calendar-day"></i> Giornata</button>
+    <button class="tab" onclick="showTab('settimana')"><i class="ti ti-calendar-week"></i> Settimana</button>
+    <button class="tab" onclick="showTab('storico')"><i class="ti ti-history"></i> Storico</button>
+  </div>
+
+  <div id="tab-oggi" class="section active">
+    <div class="date-nav">
+      <button onclick="changeDay(-1)" title="Giorno precedente"><i class="ti ti-chevron-left"></i></button>
+      <input type="date" id="selected-date" onchange="loadDay()" />
+      <button onclick="changeDay(1)" title="Giorno successivo"><i class="ti ti-chevron-right"></i></button>
+      <button class="today-btn" onclick="goToToday()" title="Vai ad oggi"><i class="ti ti-home"></i> Oggi</button>
+    </div>
+
+    <div class="cards" id="cards-oggi"></div>
+
+    <div class="timbrature-container" id="timbrature-rows"></div>
+    
+    <button class="btn-outline" style="width:100%; justify-content:center; margin-bottom:1rem;" onclick="addTimeRow()">
+      <i class="ti ti-plus"></i> Aggiungi sessione di lavoro
+    </button>
+
+    <div class="divider"></div>
+
+    <label>Note</label>
+    <textarea id="nota" placeholder="Es: telelavoro, riunione importante..."></textarea>
+
+    <div class="badge-row" id="badges"></div>
+
+    <div class="btn-row">
+      <button class="btn-save" onclick="salvaGiornata()"><i class="ti ti-device-floppy"></i> Salva</button>
+      <button class="btn-outline" onclick="clearOggi()">Cancella campi</button>
+      <button class="btn-outline btn-danger" onclick="eliminaGiornata()" title="Elimina giornata"><i class="ti ti-trash"></i></button>
+    </div>
+
+    <div class="alert" id="alert-oggi"></div>
+  </div>
+
+  <div id="tab-settimana" class="section">
+    <div class="target-row">
+      <label>Ore settimanali target:</label>
+      <input type="number" id="target-ore" value="40" min="1" max="80" step="0.5" onchange="renderSettimana()" />
+    </div>
+    <div class="week-nav">
+      <button onclick="changeWeek(-1)"><i class="ti ti-chevron-left"></i></button>
+      <span class="week-label" id="week-label"></span>
+      <button onclick="changeWeek(1)"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <div id="week-days"></div>
+    <div class="week-total">
+      <span class="week-total-label">Totale settimana</span>
+      <span class="week-total-val" id="week-total-val">—</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="week-progress" style="width:0%"></div></div>
+    <div class="prog-labels">
+      <span id="week-sub"></span>
+      <span id="target-label"></span>
+    </div>
+  </div>
+
+  <div id="tab-storico" class="section">
+    <div id="storico-list"></div>
+    <div style="margin-top:1.25rem; display:flex; gap:8px;">
+      <button class="btn-outline" onclick="esportaCSV()"><i class="ti ti-download"></i> Esporta CSV</button>
+      <button class="btn-outline" onclick="importaJSON()"><i class="ti ti-upload"></i> Importa backup</button>
+      <button class="btn-outline" onclick="esportaJSON()"><i class="ti ti-database-export"></i> Backup JSON</button>
+    </div>
+    <input type="file" id="file-import" accept=".json" style="display:none" onchange="leggiJSON(event)" />
+  </div>
+</div>
+
+<script>
+const TAGS = ['Telelavoro','Ferie','Recupero banca ore','Malattia','Permesso','Formazione','Trasferta'];
+const TODAY = new Date();
+TODAY.setHours(12,0,0,0);
+let currentWeekOffset = 0;
+let selectedTags = [];
+
+function dateKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const g = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${g}`;
+}
+
+function todayKey() { return dateKey(TODAY); }
+function getSelectedKey() { return document.getElementById('selected-date').value; }
+function loadData() { 
+  try { 
+    const data = JSON.parse(localStorage.getItem('timbrature_v2') || '{}');
+    // Migrazione dati vecchia struttura alla nuova dinamica
+    Object.keys(data).forEach(k => {
+      if (data[k] && !data[k].sessions) {
+        data[k].sessions = [];
+        if (data[k].in1 || data[k].out1) data[k].sessions.push({ in: data[k].in1 || '', out: data[k].out1 || '' });
+        if (data[k].in2 || data[k].out2) data[k].sessions.push({ in: data[k].in2 || '', out: data[k].out2 || '' });
+      }
+    });
+    return data;
+  } catch { return {}; } 
+}
+function saveData(d) { localStorage.setItem('timbrature_v2', JSON.stringify(d)); }
+
+function minutesToHM(min) {
+  if (min === null || isNaN(min) || min < 0) return '—';
+  return Math.floor(min/60) + 'h ' + String(min%60).padStart(2,'0') + 'm';
+}
+
+function timeToMin(t) {
+  if (!t) return null;
+  const [h,m] = t.split(':').map(Number);
+  return h*60+m;
+}
+
+function calcOre(entry) {
+  if (!entry || !entry.sessions || entry.sessions.length === 0) return null;
+  let tot = 0;
+  let haAlmenoUnaSessioneValida = false;
+  
+  entry.sessions.forEach(s => {
+    const i = timeToMin(s.in);
+    const o = timeToMin(s.out);
+    if (i !== null && o !== null && o > i) {
+      tot += (o - i);
+      haAlmenoUnaSessioneValida = true;
+    }
+  });
+  return haAlmenoUnaSessioneValida ? tot : null;
+}
+
+/* GESTIONE RIGHE DINAMICHE */
+function addTimeRow(inVal = '', outVal = '') {
+  const container = document.getElementById('timbrature-rows');
+  const index = container.children.length;
+  
+  const row = document.createElement('div');
+  row.className = 'time-row';
+  row.innerHTML = `
+    <div>
+      <label>Entrata</label>
+      <input type="time" class="input-in" value="${inVal}" oninput="updateCards()" />
+    </div>
+    <div>
+      <label>Uscita</label>
+      <input type="time" class="input-out" value="${outVal}" oninput="updateCards()" />
+    </div>
+    <button class="btn-remove-row" onclick="removeTimeRow(this)" title="Rimuovi sessione">
+      <i class="ti ti-x"></i>
+    </button>
+  `;
+  container.appendChild(row);
+}
+
+function removeTimeRow(button) {
+  button.parentElement.remove();
+  updateCards();
+}
+
+function getSessionsFromUI() {
+  const rows = document.querySelectorAll('.time-row');
+  const sessions = [];
+  rows.forEach(row => {
+    const i = row.querySelector('.input-in').value;
+    const o = row.querySelector('.input-out').value;
+    if (i || o) { sessions.push({ in: i, out: o }); }
+  });
+  return sessions;
+}
+
+function isToday(key) { return key === todayKey(); }
+function isPast(key) { return key < todayKey(); }
+
+function initBadges() {
+  document.getElementById('badges').innerHTML = TAGS.map(t =>
+    `<span class="badge" onclick="toggleTag('${t}',this)">${t}</span>`
+  ).join('');
+}
+
+function toggleTag(tag, el) {
+  const idx = selectedTags.indexOf(tag);
+  if (idx > -1) { selectedTags.splice(idx,1); el.classList.remove('sel'); }
+  else { selectedTags.push(tag); el.classList.add('sel'); }
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.toggle('active', ['oggi','settimana','storico'][i] === name));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'settimana') renderSettimana();
+  if (name === 'storico') renderStorico();
+}
+
+function changeDay(dir) {
+  const d = new Date(getSelectedKey() + 'T12:00:00');
+  d.setDate(d.getDate() + dir);
+  document.getElementById('selected-date').value = dateKey(d);
+  loadDay();
+}
+
+function goToToday() {
+  document.getElementById('selected-date').value = todayKey();
+  loadDay();
+}
+
+function loadDay() {
+  const key = getSelectedKey();
+  const entry = loadData()[key] || {};
+  
+  // Svuota e ricarica i blocchi orari
+  document.getElementById('timbrature-rows').innerHTML = '';
+  if (entry.sessions && entry.sessions.length > 0) {
+    entry.sessions.forEach(s => addTimeRow(s.in, s.out));
+  } else {
+    // Di default mostra due righe vuote (Mattina e Pomeriggio come prima)
+    addTimeRow();
+    addTimeRow();
+  }
+  
+  document.getElementById('nota').value = entry.nota || '';
+  selectedTags = entry.tags ? [...entry.tags] : [];
+  document.querySelectorAll('.badge').forEach(b => b.classList.toggle('sel', selectedTags.includes(b.textContent)));
+  document.getElementById('alert-oggi').style.display = 'none';
+  updateCards();
+}
+
+function updateCards() {
+  const key = getSelectedKey();
+  const entry = { sessions: getSessionsFromUI() };
+  const ore = calcOre(entry);
+  const target = parseFloat(document.getElementById('target-ore').value || 40) / 5 * 60;
+  const diff = ore !== null ? ore - target : null;
+  let diffStr = '—', diffClass = '';
+  if (diff !== null) {
+    diffStr = (diff >= 0 ? '+' : '') + minutesToHM(Math.abs(diff));
+    diffClass = diff >= 0 ? 'green' : (diff < -60 ? 'red' : 'amber');
+  }
+  const d = new Date(key + 'T12:00:00');
+  const dayStr = d.toLocaleDateString('it-IT', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+  const pastBadge = isPast(key) && !isToday(key) ? `<span class="past-badge">Giorno passato</span>` : '';
+  document.getElementById('cards-oggi').innerHTML = `
+    <div class="card" style="grid-column:1/-1;padding-bottom:8px;">
+      <div style="font-size:14px;font-weight:500;">${dayStr}${pastBadge}</div>
+    </div>
+    <div class="card"><div class="card-label">Ore lavorate</div><div class="card-value">${ore !== null ? minutesToHM(ore) : '—'}</div></div>
+    <div class="card"><div class="card-label">Scostamento</div><div class="card-value ${diffClass}">${diffStr}</div></div>
+  `;
+}
+
+function showAlert(msg, color) {
+  const al = document.getElementById('alert-oggi');
+  al.style.display = 'block';
+  al.style.borderLeftColor = color || 'var(--green)';
+  al.textContent = msg;
+  setTimeout(() => al.style.display = 'none', 2500);
+}
+
+function salvaGiornata() {
+  const key = getSelectedKey();
+  const data = loadData();
+  data[key] = {
+    sessions: getSessionsFromUI(),
+    nota: document.getElementById('nota').value,
+    tags: [...selectedTags]
+  };
+  saveData(data);
+  const ore = calcOre(data[key]);
+  showAlert(ore !== null ? `✓ Salvato — ${minutesToHM(ore)} ore nette` : '✓ Giornata salvata');
+  updateCards();
+}
+
+function clearOggi() {
+  document.getElementById('timbrature-rows').innerHTML = '';
+  addTimeRow();
+  addTimeRow();
+  document.getElementById('nota').value = '';
+  selectedTags = [];
+  document.querySelectorAll('.badge').forEach(b => b.classList.remove('sel'));
+  updateCards();
+}
+
+function eliminaGiornata() {
+  const key = getSelectedKey();
+  const data = loadData();
+  if (!data[key]) { showAlert('Nessuna giornata da eliminare', '#BA7517'); return; }
+  if (!confirm('Eliminare la giornata del ' + new Date(key+'T12:00:00').toLocaleDateString('it-IT') + '?')) return;
+  delete data[key];
+  saveData(data);
+  clearOggi();
+  showAlert('✓ Giornata eliminata', 'var(--red)');
+}
+
+function getWeekDates(offset) {
+  const now = new Date(TODAY);
+  const dow = (now.getDay() + 6) % 7;
+  now.setDate(now.getDate() - dow + offset * 7);
+  return Array.from({length:7}, (_,i) => { const d = new Date(now); d.setDate(now.getDate()+i); return d; });
+}
+
+function changeWeek(dir) { currentWeekOffset += dir; renderSettimana(); }
+
+function renderSettimana() {
+  const days = getWeekDates(currentWeekOffset);
+  const data = loadData();
+  const names = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+  const target = parseFloat(document.getElementById('target-ore').value || 40) * 60;
+  document.getElementById('week-label').textContent =
+    days[0].toLocaleDateString('it-IT',{day:'2-digit',month:'short'}) + ' – ' +
+    days[6].toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'});
+  let totalMin = 0;
+  let html = '';
+  days.forEach((d,i) => {
+    const key = dateKey(d);
+    const entry = data[key];
+    const ore = calcOre(entry);
+    if (ore) totalMin += ore;
+    const tags = entry?.tags?.length ? entry.tags[0] : '';
+    const nota = entry?.nota || '';
+    html += `<div class="day-row${isToday(key)?' today':''}" onclick="goToDay('${key}')">
+      <span class="day-name">${names[i]}</span>
+      <span class="day-date">${d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})}</span>
+      <span class="day-hours">${ore !== null ? minutesToHM(ore) : '—'}</span>
+      ${tags ? `<span class="day-tag">${tags}</span>` : ''}
+      <span class="day-note">${nota}</span>
+    </div>`;
+  });
+  document.getElementById('week-days').innerHTML = html;
+  const perc = target > 0 ? Math.round((totalMin/target)*100) : 0;
+  document.getElementById('week-total-val').textContent = minutesToHM(totalMin);
+  const bar = document.getElementById('week-progress');
+  bar.style.width = Math.min(perc,100)+'%';
+  bar.className = 'progress-fill' + (totalMin > target ? ' over' : '');
+  const diff = totalMin - target;
+  document.getElementById('week-sub').textContent = diff >= 0
+    ? `+${minutesToHM(diff)} rispetto al target`
+    : `Mancano ${minutesToHM(Math.abs(diff))} al target`;
+  document.getElementById('target-label').textContent = 'Target: ' + (target/60).toFixed(0) + 'h';
+}
+
+function goToDay(key) {
+  document.getElementById('selected-date').value = key;
+  loadDay();
+  showTab('oggi');
+}
+
+function renderStorico() {
+  const data = loadData();
+  const keys = Object.keys(data).sort().reverse();
+  if (!keys.length) {
+    document.getElementById('storico-list').innerHTML = '<p class="empty">Nessuna giornata salvata.</p>';
+    return;
+  }
+  document.getElementById('storico-list').innerHTML = keys.map(key => {
+    const e = data[key];
+    const ore = calcOre(e);
+    const d = new Date(key + 'T12:00:00');
+    const tags = e.tags?.length ? e.tags.join(', ') : '';
+    
+    // Genera una stringa leggibile per le sessioni orarie (es: 09:00→13:00  14:00→18:00)
+    const orari = e.sessions ? e.sessions.map(s => `${s.in || '?'}-${s.out || '?'}`).join(' / ') : '';
+
+    return `<div class="history-item" onclick="goToDay('${key}')">
+      <div class="history-detail" style="font-size:11px;color:var(--text3);margin-bottom:2px">${d.toLocaleDateString('it-IT',{weekday:'long'})}</div>
+      <div class="history-date">${d.toLocaleDateString('it-IT',{day:'2-digit',month:'long',year:'numeric'})}${ore ? ` — <span style="color:var(--green)">${minutesToHM(ore)}</span>` : ''}</div>
+      <div class="history-detail">${[orari, tags, e.nota].filter(Boolean).join(' · ')}</div>
+    </div>`;
+  }).join('');
+}
+
+function esportaCSV() {
+  const data = loadData();
+  const keys = Object.keys(data).sort();
+  if (!keys.length) { alert('Nessun dato da esportare.'); return; }
+  const rows = [['Data','Sessioni Orarie','Ore nette','Tag','Note']];
+  keys.forEach(k => {
+    const e = data[k]; const ore = calcOre(e);
+    const orariStr = e.sessions ? e.sessions.map(s => `${s.in}-${s.out}`).join('; ') : '';
+    rows.push([k, orariStr, ore ? (ore/60).toFixed(2) : '', (e.tags||[]).join(';'), e.nota||'']);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  scarica('timbrature.csv', 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv));
+}
+
+function esportaJSON() {
+  const data = loadData();
+  if (!Object.keys(data).length) { alert('Nessun dato da esportare.'); return; }
+  scarica('timbrature_backup.json', 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2)));
+}
+
+function importaJSON() { document.getElementById('file-import').click(); }
+
+function leggiJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      const existing = loadData();
+      const merged = Object.assign({}, existing, imported);
+      saveData(merged);
+      alert(`✓ Importate ${Object.keys(imported).length} giornate.`);
+      renderStorico();
+    } catch { alert('Errore nel file JSON.'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function scarica(nome, dataUrl) {
+  const a = document.createElement('a');
+  a.href = dataUrl; a.download = nome; a.click();
+}
+
+// Init
+document.getElementById('selected-date').value = todayKey();
+initBadges();
+loadDay();
+</script>
+</body>
+</html>
